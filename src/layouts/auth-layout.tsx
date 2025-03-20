@@ -9,7 +9,8 @@ const AuthLayout = ({ children }: { children: React.ReactNode }) => {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      <header className="bg-white shadow-sm py-4 px-6">
+      {/* Fixed Navbar */}
+      <header className="fixed top-0 left-0 w-full bg-white shadow-sm py-4 px-6 z-50">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
           <div className="flex items-center">
             <Link href="/" className="text-blue-500 font-bold text-3xl">
@@ -45,7 +46,9 @@ const AuthLayout = ({ children }: { children: React.ReactNode }) => {
           </div>
         </div>
       </header>
-      <main className="flex-grow flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+
+      {/* Add padding-top to prevent content from being hidden behind the fixed navbar */}
+      <main className="flex-grow flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 mt-16">
         <div className="max-w-[552px] w-full bg-white rounded-lg shadow-md p-8">
           {children}
         </div>
