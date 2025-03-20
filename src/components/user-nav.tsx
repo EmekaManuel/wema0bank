@@ -37,8 +37,8 @@ export function UserNav() {
                 <AvatarFallback className="bg-transparent">
                   <Image
                     src={UserImage}
-                    width={44}
-                    height={44}
+                    width={66}
+                    height={66}
                     alt="logo"
                     className=""
                   />

@@ -18,7 +18,7 @@ export function Navbar({ title }: NavbarProps) {
             </div>
           </div>
         </div>
-        <div className="flex flex-1 items-center justify-end">
+        <div className="flex flex-1 items-center space-x-4 justify-end">
           <BellDot />
           <UserNav />
         </div>

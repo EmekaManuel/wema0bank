@@ -9,35 +9,41 @@ const AuthLayout = ({ children }: { children: React.ReactNode }) => {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      {/* Fixed Navbar */}
-      <header className="fixed top-0 left-0 w-full bg-white shadow-sm py-4 px-6 z-50">
-        <div className="max-w-7xl mx-auto flex justify-between items-center">
+      {/* Fixed Responsive Navbar */}
+      <header className="fixed top-0 left-0 w-full bg-white shadow-sm py-3 sm:py-4 px-4 sm:px-6 z-50">
+        <div className="max-w-7xl mx-auto flex flex-wrap justify-between items-center">
+          {/* Logo */}
           <div className="flex items-center">
-            <Link href="/" className="text-blue-500 font-bold text-3xl">
+            <Link
+              href="/"
+              className="text-blue-500 font-bold text-2xl sm:text-3xl"
+            >
               XPRESS
             </Link>
           </div>
-          <div>
+
+          {/* Auth Links */}
+          <div className="flex flex-wrap items-center gap-2 sm:gap-4">
             {pathname === "/signin" ? (
               <>
-                <span className="text-gray-600 mr-2">
+                <span className="text-gray-600 text-sm md:text-base">
                   Don&#39;t have an account?
                 </span>
                 <Link
                   href="/"
-                  className="inline-block px-4 py-2 border border-blue-500 text-blue-500 rounded hover:bg-blue-50"
+                  className="inline-block px-3 sm:px-4 py-2 border border-blue-500 text-blue-500 rounded text-sm md:text-base hover:bg-blue-50"
                 >
                   Sign Up
                 </Link>
               </>
             ) : (
               <>
-                <span className="text-gray-600 mr-2">
+                <span className="text-gray-600 text-sm md:text-base">
                   Already have an account?
                 </span>
                 <Link
                   href="/signin"
-                  className="inline-block px-4 py-2 border border-blue-500 text-blue-500 rounded hover:bg-blue-50"
+                  className="inline-block px-3 sm:px-4 py-2 border border-blue-500 text-blue-500 rounded text-sm md:text-base hover:bg-blue-50"
                 >
                   Sign In
                 </Link>
@@ -47,7 +53,7 @@ const AuthLayout = ({ children }: { children: React.ReactNode }) => {
         </div>
       </header>
 
-      {/* Add padding-top to prevent content from being hidden behind the fixed navbar */}
+      {/* Padding to prevent overlap with the fixed navbar */}
       <main className="flex-grow flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 mt-16">
         <div className="max-w-[552px] w-full bg-white rounded-lg shadow-md p-8">
           {children}
