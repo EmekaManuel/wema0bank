@@ -146,9 +146,10 @@ const DashboardTable = () => {
 
   return (
     <div className=" pt-8 pb-8 px-4 sm:px-8">
-      <div className="flex mb-[32px] items-center justify-between">
+      <div className="flex flex-wrap gap-4 mb-8 items-center justify-between">
+        {/* Dropdown Menu */}
         <Select>
-          <SelectTrigger className="w-[180px] h-[48px]">
+          <SelectTrigger className="w-full sm:w-[180px] h-[48px]">
             <SelectValue placeholder="All" />
           </SelectTrigger>
           <SelectContent>
@@ -157,13 +158,19 @@ const DashboardTable = () => {
             <SelectItem value="deactivated">Deactivated Verifiers</SelectItem>
           </SelectContent>
         </Select>
-        <div className="flex items-center gap-4">
-          <Input className="h-[48px]" placeholder="Name /Phone no/ location" />
-          <Button className="h-[48px] bg-[#039BF0] hover:bg-blue-600">
-            <Plus /> Add New Verifier
+
+        {/* Input and Button Container */}
+        <div className="flex flex-wrap w-full sm:w-auto items-center gap-2 sm:gap-4">
+          <Input
+            className="h-[48px] w-full sm:w-[240px]"
+            placeholder="Name / Phone no / Location"
+          />
+          <Button className="h-[48px] w-full sm:w-auto bg-[#039BF0] hover:bg-blue-600 flex items-center">
+            <Plus className="mr-2" /> Add New Verifier
           </Button>
         </div>
       </div>
+
       <MaterialActionsTable
         data={userData}
         isLoading={loading}
