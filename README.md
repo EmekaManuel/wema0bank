@@ -1,36 +1,65 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Wema Bank Assessment Project
 
-## Getting Started
+This is a Next.js assessment project built using TypeScript and React. The project is styled with Tailwind CSS and the ShadCN component library. It includes session management, form validation with Zod, and a dynamic table using Material Table with table actions.
 
-First, run the development server:
+## 🚀 Live Demo
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+🔗 **Live URL:** [Wema Bank Assessment](https://wema0bank.vercel.app/)
+
+### Login Credentials
+
+- **Email:** `admin@example.com`
+- **Password:** `password123`
+
+## 🛠 Tech Stack
+
+- **Framework:** Next.js
+- **Language:** TypeScript
+- **UI Library:** React
+- **Styling:** Tailwind CSS, ShadCN
+- **Validation:** Zod
+- **Table Component:** Material Table
+- **Session Management:** Implemented as required
+
+## 🏗 Features
+
+✅ Next.js with TypeScript support  
+✅ Tailwind CSS for styling  
+✅ ShadCN component library for enhanced UI  
+✅ Form validation using Zod  
+✅ Dynamic table with Material Table  
+✅ Table actions support  
+✅ Session management  
+
+## 🚀 Getting Started
+
+### 1️⃣ Clone the Repository
+```sh
+git clone https://github.com/EmekaManuel/wema0bank.git
+cd wema0bank
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 2️⃣ Install Dependencies
+```sh
+yarn install  # or npm install
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### 3️⃣ Run the Development Server
+```sh
+yarn dev  # or npm run dev
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+The app will be available at `http://localhost:3000`.
 
-## Learn More
+## 🏗 Build for Production
+```sh
+yarn build  # or npm run build
+yarn start  # or npm run start
+```
 
-To learn more about Next.js, take a look at the following resources:
+## 📜 License
+This project is for assessment purposes only.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+---
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+📌 **GitHub Repository:** [View on GitHub](https://github.com/EmekaManuel/wema0bank)
