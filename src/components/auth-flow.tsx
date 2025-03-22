@@ -4,73 +4,106 @@ import React, { useState, ChangeEvent } from "react";
 import { useRouter } from "next/navigation";
 import PendingModal from "./auth/pending-modal";
 import { useToast } from "@/hooks/use-toast";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
 
-interface FormData {
-  businessName: string;
-  businessEmail: string;
-  businessPhone: string;
-  businessCategory: string;
-  accountNo: string;
-  logo: File | null;
-  houseNumber: string;
-  street: string;
-  city: string;
-  state: string;
-  contactName: string;
-  contactPhone: string;
-  contactEmail: string;
-  password: string;
-  confirmPassword: string;
-}
+import { Button } from "@/components/ui/button";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Eye, EyeOff, Upload } from "lucide-react";
+
+const businessInfoSchema = z.object({
+  businessName: z.string().min(1, "Business name is required"),
+  businessEmail: z.string().email("Please enter a valid email address"),
+  businessPhone: z.string().min(1, "Business phone is required"),
+  businessCategory: z.string().min(1, "Please select a business category"),
+  accountNo: z.string().min(1, "Account number is required"),
+});
+
+const contactInfoSchema = z
+  .object({
+    houseNumber: z.string().min(1, "House number is required"),
+    street: z.string().min(1, "Street is required"),
+    city: z.string().min(1, "City is required"),
+    state: z.string().min(1, "State is required"),
+    contactName: z.string().min(1, "Contact name is required"),
+    contactPhone: z.string().min(1, "Contact phone is required"),
+    contactEmail: z.string().email("Please enter a valid email address"),
+    password: z.string().min(6, "Password must be at least 6 characters"),
+    confirmPassword: z.string().min(1, "Please confirm your password"),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords do not match",
+    path: ["confirmPassword"],
+  });
+
+type BusinessInfoSchema = z.infer<typeof businessInfoSchema>;
+type ContactInfoSchema = z.infer<typeof contactInfoSchema>;
 
 const XpressRewardsSignup: React.FC = () => {
   const router = useRouter();
   const { toast } = useToast();
-
-  const [formData, setFormData] = useState<FormData>({
-    businessName: "",
-    businessEmail: "",
-    businessPhone: "",
-    businessCategory: "",
-    accountNo: "",
-    logo: null,
-    houseNumber: "",
-    street: "",
-    city: "",
-    state: "",
-    contactName: "",
-    contactPhone: "",
-    contactEmail: "",
-    password: "",
-    confirmPassword: "",
-  });
   const [currentStep, setCurrentStep] = useState<number>(1);
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [showConfirmPassword, setShowConfirmPassword] =
     useState<boolean>(false);
-
   const [showPendingModal, setShowPendingModal] = useState<boolean>(false);
+  const [logo, setLogo] = useState<File | null>(null);
 
-  const handleInputChange = (
-    e: ChangeEvent<HTMLInputElement | HTMLSelectElement>
-  ) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
+  // Form for step 1
+  const businessInfoForm = useForm<BusinessInfoSchema>({
+    resolver: zodResolver(businessInfoSchema),
+    defaultValues: {
+      businessName: "",
+      businessEmail: "",
+      businessPhone: "",
+      businessCategory: "",
+      accountNo: "",
+    },
+  });
+
+  // Form for step 2
+  const contactInfoForm = useForm<ContactInfoSchema>({
+    resolver: zodResolver(contactInfoSchema),
+    defaultValues: {
+      houseNumber: "",
+      street: "",
+      city: "",
+      state: "",
+      contactName: "",
+      contactPhone: "",
+      contactEmail: "",
+      password: "",
+      confirmPassword: "",
+    },
+  });
 
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (files && files[0] && files[0].size <= 10 * 1024 * 1024) {
       // 10MB limit
-      setFormData((prev) => ({
-        ...prev,
-        logo: files[0],
-      }));
+      setLogo(files[0]);
     } else {
-      alert("File size exceeds 10MB limit");
+      toast({
+        title: "File Size Error",
+        description: "File size exceeds 10MB limit",
+      });
     }
   };
 
@@ -83,78 +116,32 @@ const XpressRewardsSignup: React.FC = () => {
     const file = e.dataTransfer.files[0];
     if (file && file.size <= 10 * 1024 * 1024) {
       // 10MB limit
-      setFormData((prev) => ({
-        ...prev,
-        logo: file,
-      }));
+      setLogo(file);
     } else {
-      alert("File size exceeds 10MB limit");
+      toast({
+        title: "File Size Error",
+        description: "File size exceeds 10MB limit",
+      });
     }
   };
 
-  const handleNext = () => {
-    if (currentStep === 1) {
-      const requiredFields = [
-        "businessName",
-        "businessEmail",
-        "businessPhone",
-        "businessCategory",
-        "accountNo",
-      ];
+  const onBusinessInfoSubmit = () => {
+    setCurrentStep(2);
+  };
 
-      // @ts-expect-error tsq
-      const missingFields = requiredFields.filter((field) => !formData[field]);
+  const onContactInfoSubmit = (contactData: ContactInfoSchema) => {
+    const combinedData = {
+      ...businessInfoForm.getValues(),
+      ...contactData,
+      logo,
+    };
 
-      if (missingFields.length > 0) {
-        toast({
-          title: "Missing Fields",
-          description: `Please fill in all required fields: ${missingFields
-            .map((field) => field.replace(/([A-Z])/g, " $1").toLowerCase())
-            .join(", ")}`,
-        });
-        return;
-      }
-
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(formData.businessEmail)) {
-        toast({
-          title: "Invalid Email",
-          description: `Please enter a valid business email address`,
-        });
-        return;
-      }
-
-      setCurrentStep(2);
-    } else {
-      console.log("Form submitted:", formData);
-      setShowPendingModal(true);
-    }
+    console.log("Form submitted:", combinedData);
+    setShowPendingModal(true);
   };
 
   const handleBack = () => {
     setCurrentStep(1);
-  };
-
-  const togglePasswordVisibility = () => {
-    setShowPassword(!showPassword);
-  };
-
-  const toggleConfirmPasswordVisibility = () => {
-    setShowConfirmPassword(!showConfirmPassword);
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (formData.password !== formData.confirmPassword) {
-      toast({
-        title: "Passwords do not match",
-        description: `Input the right passwords`,
-      });
-      return;
-    }
-
-    console.log("Form submitted:", formData);
-    setShowPendingModal(true);
   };
 
   const handleModalClose = () => {
@@ -164,7 +151,7 @@ const XpressRewardsSignup: React.FC = () => {
 
   return (
     <div className="w-full">
-      <h2 className="text-2xl font-bold text-blue-500 mb-1">
+      <h2 className="text-2xl font-bold text-[#039BF0] mb-1">
         Welcome to Xpress Rewards
       </h2>
       <p className="text-gray-600 mb-6">
@@ -172,457 +159,394 @@ const XpressRewardsSignup: React.FC = () => {
       </p>
 
       {currentStep === 1 ? (
-        <form>
-          <div className="mb-6">
-            <h3 className="text-blue-500 font-medium mb-4">
+        <Card className="border-none shadow-none">
+          <CardHeader>
+            <CardTitle className="text-[#039BF0]">
               Business Information
-            </h3>
-
-            <div className="mb-4">
-              <label
-                htmlFor="businessName"
-                className="block text-gray-700 mb-2"
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Form {...businessInfoForm}>
+              <form
+                onSubmit={businessInfoForm.handleSubmit(onBusinessInfoSubmit)}
+                className="space-y-6"
               >
-                Business name
-              </label>
-              <input
-                type="text"
-                id="businessName"
-                name="businessName"
-                value={formData.businessName}
-                onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                required
-              />
-            </div>
+                <FormField
+                  control={businessInfoForm.control}
+                  name="businessName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Business name</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Enter business name" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-            <div className="mb-4">
-              <label
-                htmlFor="businessEmail"
-                className="block text-gray-700 mb-2"
-              >
-                Business Email Address
-              </label>
-              <input
-                type="email"
-                id="businessEmail"
-                name="businessEmail"
-                value={formData.businessEmail}
-                onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                required
-              />
-            </div>
+                <FormField
+                  control={businessInfoForm.control}
+                  name="businessEmail"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Business Email Address</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="email"
+                          placeholder="Enter business email"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-            <div className="mb-4">
-              <label
-                htmlFor="businessPhone"
-                className="block text-gray-700 mb-2"
-              >
-                Business Phone Number
-              </label>
-              <input
-                type="tel"
-                id="businessPhone"
-                name="businessPhone"
-                value={formData.businessPhone}
-                onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                required
-              />
-            </div>
+                <FormField
+                  control={businessInfoForm.control}
+                  name="businessPhone"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Business Phone Number</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="tel"
+                          placeholder="Enter business phone"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-            <div className="mb-4">
-              <label
-                htmlFor="businessCategory"
-                className="block text-gray-700 mb-2"
-              >
-                Business Category
-              </label>
-              <div className="relative">
-                <select
-                  id="businessCategory"
+                <FormField
+                  control={businessInfoForm.control}
                   name="businessCategory"
-                  value={formData.businessCategory}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none"
-                  required
-                >
-                  <option value="" disabled>
-                    Select a category
-                  </option>
-                  <option value="retail">Retail</option>
-                  <option value="food">Food & Beverage</option>
-                  <option value="services">Services</option>
-                  <option value="other">Other</option>
-                </select>
-                <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
-                  <svg
-                    className="w-5 h-5 text-gray-400"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                </div>
-              </div>
-            </div>
-
-            <div className="mb-4">
-              <label htmlFor="accountNo" className="block text-gray-700 mb-2">
-                Account No
-              </label>
-              <input
-                type="text"
-                id="accountNo"
-                name="accountNo"
-                value={formData.accountNo}
-                onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                required
-              />
-            </div>
-
-            <div className="mb-4">
-              <label className="block text-gray-700 mb-2">Image (Logo)</label>
-              <div
-                className="border-2 border-dashed border-gray-300 rounded p-6 text-center"
-                onDragOver={handleDragOver}
-                onDrop={handleDrop}
-              >
-                <div className="flex justify-center mb-4">
-                  <svg
-                    className="w-12 h-12 text-blue-500"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-                    />
-                  </svg>
-                </div>
-                <p className="text-sm text-gray-600 mb-2">
-                  Drag here or click the button below to upload
-                </p>
-                <button
-                  type="button"
-                  onClick={() => document.getElementById("fileInput")?.click()}
-                  className="inline-flex items-center px-4 py-2 bg-blue-500 text-white font-medium rounded hover:bg-blue-600"
-                >
-                  <svg
-                    className="w-4 h-4 mr-2"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M15 19l-7-7 7-7"
-                    />
-                  </svg>
-                  Choose file
-                </button>
-                <input
-                  type="file"
-                  id="fileInput"
-                  className="hidden"
-                  accept="image/jpeg"
-                  onChange={handleFileChange}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Business Category</FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a category" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="retail">Retail</SelectItem>
+                          <SelectItem value="food">Food & Beverage</SelectItem>
+                          <SelectItem value="services">Services</SelectItem>
+                          <SelectItem value="other">Other</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
-                <p className="text-xs text-gray-500 mt-2">
-                  Maximum upload size: 10MB (.jpg)
-                </p>
-              </div>
-            </div>
-          </div>
 
-          <div className="flex items-center justify-between mt-8">
-            <button
-              type="button"
-              onClick={handleNext}
-              className="px-6 py-3 bg-blue-500 text-white font-medium rounded hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-            >
-              Next
-            </button>
-            <span className="text-gray-500">Step 1 of 2</span>
-          </div>
-        </form>
-      ) : (
-        <form onSubmit={handleSubmit}>
-          <div className="mb-6">
-            <h3 className="text-blue-500 font-medium mb-4">Business Address</h3>
+                <FormField
+                  control={businessInfoForm.control}
+                  name="accountNo"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Account No</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Enter account number" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-            <div className="flex flex-wrap -mx-2 mb-4">
-              <div className="w-full md:w-1/2 px-2 mb-4 md:mb-0">
-                <label
-                  htmlFor="houseNumber"
-                  className="block text-gray-700 mb-2"
-                >
-                  House Number
-                </label>
-                <input
-                  type="text"
-                  id="houseNumber"
-                  name="houseNumber"
-                  value={formData.houseNumber}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
-                />
-              </div>
-              <div className="w-full md:w-1/2 px-2">
-                <label htmlFor="street" className="block text-gray-700 mb-2">
-                  Street
-                </label>
-                <input
-                  type="text"
-                  id="street"
-                  name="street"
-                  value={formData.street}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
-                />
-              </div>
-            </div>
-
-            <div className="flex flex-wrap -mx-2 mb-4">
-              <div className="w-full md:w-1/2 px-2 mb-4 md:mb-0">
-                <label htmlFor="city" className="block text-gray-700 mb-2">
-                  City
-                </label>
-                <input
-                  type="text"
-                  id="city"
-                  name="city"
-                  value={formData.city}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
-                />
-              </div>
-              <div className="w-full md:w-1/2 px-2">
-                <label htmlFor="state" className="block text-gray-700 mb-2">
-                  State
-                </label>
-                <div className="relative">
-                  <select
-                    id="state"
-                    name="state"
-                    value={formData.state}
-                    onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none"
-                    required
+                <div className="space-y-2">
+                  <FormLabel>Image (Logo)</FormLabel>
+                  <div
+                    className="border-2 border-dashed border-gray-300 rounded p-6 text-center"
+                    onDragOver={handleDragOver}
+                    onDrop={handleDrop}
                   >
-                    <option value="" disabled>
-                      Select a state
-                    </option>
-                    <option value="AL">Alabama</option>
-                    <option value="AK">Alaska</option>
-                    <option value="AZ">Arizona</option>
-                    {/* Add more states as needed */}
-                  </select>
-                  <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
-                    <svg
-                      className="w-5 h-5 text-gray-400"
-                      fill="currentColor"
-                      viewBox="0 0 20 20"
+                    <div className="flex justify-center mb-4">
+                      <Upload className="w-12 h-12 text-[#039BF0]" />
+                    </div>
+                    <p className="text-sm text-gray-600 mb-2">
+                      Drag here or click the button below to upload
+                    </p>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() =>
+                        document.getElementById("fileInput")?.click()
+                      }
+                      className="inline-flex items-center"
                     >
-                      <path
-                        fillRule="evenodd"
-                        d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
+                      Choose file
+                    </Button>
+                    <input
+                      type="file"
+                      id="fileInput"
+                      className="hidden"
+                      accept="image/jpeg"
+                      onChange={handleFileChange}
+                    />
+                    <p className="text-xs text-gray-500 mt-2">
+                      Maximum upload size: 10MB (.jpg)
+                    </p>
+                    {logo && (
+                      <p className="text-sm text-green-600 mt-2">
+                        File selected: {logo.name}
+                      </p>
+                    )}
                   </div>
                 </div>
-              </div>
-            </div>
-          </div>
 
-          <div className="mb-6">
-            <h3 className="text-blue-500 font-medium mb-4">
-              Contact Person Information
-            </h3>
-
-            <div className="mb-4">
-              <label htmlFor="contactName" className="block text-gray-700 mb-2">
-                Contact Name
-              </label>
-              <input
-                type="text"
-                id="contactName"
-                name="contactName"
-                value={formData.contactName}
-                onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                required
-              />
-            </div>
-
-            <div className="mb-4">
-              <label
-                htmlFor="contactPhone"
-                className="block text-gray-700 mb-2"
+                <div className="flex items-center justify-between mt-8">
+                  <Button className="bg-[#039BF0]" type="submit">
+                    Next
+                  </Button>
+                  <span className="text-gray-500">Step 1 of 2</span>
+                </div>
+              </form>
+            </Form>
+          </CardContent>
+        </Card>
+      ) : (
+        <Card className="border-none shadow-none">
+          <CardContent>
+            <Form {...contactInfoForm}>
+              <form
+                onSubmit={contactInfoForm.handleSubmit(onContactInfoSubmit)}
+                className="space-y-6"
               >
-                Contact Phone Number
-              </label>
-              <input
-                type="tel"
-                id="contactPhone"
-                name="contactPhone"
-                value={formData.contactPhone}
-                onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                required
-              />
-            </div>
+                <div>
+                  <h3 className="text-[#039BF0] font-medium mb-4">
+                    Business Address
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField
+                      control={contactInfoForm.control}
+                      name="houseNumber"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>House Number</FormLabel>
+                          <FormControl>
+                            <Input
+                              placeholder="Enter house number"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
 
-            <div className="mb-4">
-              <label
-                htmlFor="contactEmail"
-                className="block text-gray-700 mb-2"
-              >
-                Contact Email Address
-              </label>
-              <input
-                type="email"
-                id="contactEmail"
-                name="contactEmail"
-                value={formData.contactEmail}
-                onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                required
-              />
-            </div>
-          </div>
+                    <FormField
+                      control={contactInfoForm.control}
+                      name="street"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Street</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Enter street" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
 
-          <div className="mb-6">
-            <h3 className="text-blue-500 font-medium mb-4">Password</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                    <FormField
+                      control={contactInfoForm.control}
+                      name="city"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>City</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Enter city" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
 
-            <div className="mb-4">
-              <label htmlFor="password" className="block text-gray-700 mb-2">
-                Password
-              </label>
-              <div className="relative">
-                <input
-                  type={showPassword ? "text" : "password"}
-                  id="password"
-                  name="password"
-                  value={formData.password}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
-                />
-                <button
-                  type="button"
-                  className="absolute inset-y-0 right-0 flex items-center px-3"
-                  onClick={togglePasswordVisibility}
-                >
-                  <svg
-                    className="w-5 h-5 text-gray-500"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    {showPassword ? (
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"
-                      />
-                    ) : (
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                      />
+                    <FormField
+                      control={contactInfoForm.control}
+                      name="state"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>State</FormLabel>
+                          <Select
+                            onValueChange={field.onChange}
+                            defaultValue={field.value}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select a state" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="Lagos">Lagos</SelectItem>
+                              <SelectItem value="Abuja">Abuja</SelectItem>
+                              <SelectItem value="Ogun">Ogun</SelectItem>
+                              {/* Add more states as needed */}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="text-[#039BF0] font-medium mb-4">
+                    Contact Person Information
+                  </h3>
+
+                  <FormField
+                    control={contactInfoForm.control}
+                    name="contactName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Contact Name</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Enter contact name" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
                     )}
-                  </svg>
-                </button>
-              </div>
-            </div>
+                  />
 
-            <div className="mb-4">
-              <label
-                htmlFor="confirmPassword"
-                className="block text-gray-700 mb-2"
-              >
-                Confirm Password
-              </label>
-              <div className="relative">
-                <input
-                  type={showConfirmPassword ? "text" : "password"}
-                  id="confirmPassword"
-                  name="confirmPassword"
-                  value={formData.confirmPassword}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
-                />
-                <button
-                  type="button"
-                  className="absolute inset-y-0 right-0 flex items-center px-3"
-                  onClick={toggleConfirmPasswordVisibility}
-                >
-                  <svg
-                    className="w-5 h-5 text-gray-500"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    {showConfirmPassword ? (
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"
-                      />
-                    ) : (
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                      />
+                  <FormField
+                    control={contactInfoForm.control}
+                    name="contactPhone"
+                    render={({ field }) => (
+                      <FormItem className="mt-4">
+                        <FormLabel>Contact Phone Number</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="tel"
+                            placeholder="Enter contact phone"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
                     )}
-                  </svg>
-                </button>
-              </div>
-            </div>
-          </div>
+                  />
 
-          <div className="flex items-center justify-between mt-8">
-            <div className="flex gap-4">
-              <button
-                type="button"
-                onClick={handleBack}
-                className="px-6 py-3 bg-gray-200 text-gray-700 font-medium rounded hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
-              >
-                Back
-              </button>
-              <button
-                type="submit"
-                className="px-6 py-3 bg-blue-500 text-white font-medium rounded hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-              >
-                Submit
-              </button>
-            </div>
-            <span className="text-gray-500">Step 2 of 2</span>
-          </div>
-        </form>
+                  <FormField
+                    control={contactInfoForm.control}
+                    name="contactEmail"
+                    render={({ field }) => (
+                      <FormItem className="mt-4">
+                        <FormLabel>Contact Email Address</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="email"
+                            placeholder="Enter contact email"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <div>
+                  <h3 className="text-[#039BF0] font-medium mb-4">Password</h3>
+
+                  <FormField
+                    control={contactInfoForm.control}
+                    name="password"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Password</FormLabel>
+                        <FormControl>
+                          <div className="relative">
+                            <Input
+                              type={showPassword ? "text" : "password"}
+                              placeholder="Enter password"
+                              {...field}
+                            />
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              className="absolute right-0 top-0 h-full px-3"
+                              onClick={() => setShowPassword(!showPassword)}
+                            >
+                              {showPassword ? (
+                                <EyeOff className="h-4 w-4" />
+                              ) : (
+                                <Eye className="h-4 w-4" />
+                              )}
+                            </Button>
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={contactInfoForm.control}
+                    name="confirmPassword"
+                    render={({ field }) => (
+                      <FormItem className="mt-4">
+                        <FormLabel>Confirm Password</FormLabel>
+                        <FormControl>
+                          <div className="relative">
+                            <Input
+                              type={showConfirmPassword ? "text" : "password"}
+                              placeholder="Confirm password"
+                              {...field}
+                            />
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              className="absolute right-0 top-0 h-full px-3"
+                              onClick={() =>
+                                setShowConfirmPassword(!showConfirmPassword)
+                              }
+                            >
+                              {showConfirmPassword ? (
+                                <EyeOff className="h-4 w-4" />
+                              ) : (
+                                <Eye className="h-4 w-4" />
+                              )}
+                            </Button>
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between mt-8">
+                  <div className="flex gap-4">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={handleBack}
+                    >
+                      Back
+                    </Button>
+                    <Button className="bg-[#039BF0]" type="submit">
+                      Submit
+                    </Button>
+                  </div>
+                  <span className="text-gray-500">Step 2 of 2</span>
+                </div>
+              </form>
+            </Form>
+          </CardContent>
+        </Card>
       )}
       <PendingModal isOpen={showPendingModal} onClose={handleModalClose} />
     </div>

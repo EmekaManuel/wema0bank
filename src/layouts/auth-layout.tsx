@@ -16,7 +16,7 @@ const AuthLayout = ({ children }: { children: React.ReactNode }) => {
           <div className="flex items-center">
             <Link
               href="/"
-              className="text-blue-500 font-bold text-2xl sm:text-3xl"
+              className="text-[#039BF0] font-bold text-2xl sm:text-3xl"
             >
               XPRESS
             </Link>
@@ -31,7 +31,7 @@ const AuthLayout = ({ children }: { children: React.ReactNode }) => {
                 </span>
                 <Link
                   href="/"
-                  className="inline-block px-3 sm:px-4 py-2 border border-blue-500 text-blue-500 rounded text-sm md:text-base hover:bg-blue-50"
+                  className="inline-block px-3 sm:px-4 py-2 border border-blue-500 text-[#039BF0] rounded text-sm md:text-base hover:bg-blue-50"
                 >
                   Sign Up
                 </Link>
@@ -43,7 +43,7 @@ const AuthLayout = ({ children }: { children: React.ReactNode }) => {
                 </span>
                 <Link
                   href="/signin"
-                  className="inline-block px-3 sm:px-4 py-2 border border-blue-500 text-blue-500 rounded text-sm md:text-base hover:bg-blue-50"
+                  className="inline-block px-3 sm:px-4 py-2 border border-blue-500 text-[#039BF0] rounded text-sm md:text-base hover:bg-blue-50"
                 >
                   Sign In
                 </Link>
